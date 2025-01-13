@@ -1,16 +1,21 @@
 <header
   id="header-menu"
-  class="sticky top-0 z-10 flex h-14 bg-white py-3 shadow-sm transition-all dark:bg-gray-800"
+  class="sticky top-0 z-10 flex h-16 bg-white py-3 shadow-sm transition-all dark:bg-gray-800"
   x-data="{ open : false }"
   th:with="menu = ${menuFinder.getPrimary()}"
 >
-  <div class="container mx-auto flex h-full justify-between">
+  <div class="mx-auto flex h-full w-full max-w-7xl justify-between px-4 lg:px-6">
     <div class="flex h-full items-center gap-6">
       <div class="mr-2 h-full">
         <a href="/" class="inline-flex h-full items-center">
-          <img th:if="${not #strings.isEmpty(site.logo)}" th:src="${site.logo}" th:alt="Logo" class="h-full w-full" />
+          <img
+            th:if="${theme.config.global.logo_type == 'image'} and ${not #strings.isEmpty(site.logo)}"
+            th:src="${site.logo}"
+            th:alt="Logo"
+            class="h-full w-auto"
+          />
           <span
-            th:if="${#strings.isEmpty(site.logo)}"
+            th:if="${theme.config.global.logo_type == 'text'} or ${#strings.isEmpty(site.logo)}"
             id="site-title"
             class="text-lg font-medium text-gray-900 dark:text-slate-100"
             th:text="${site.title}"
@@ -29,6 +34,7 @@
             class="text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
             th:href="@{${menuItem.status.href}}"
             th:text="${menuItem.status.displayName}"
+            th:target="${menuItem.spec.target?.value}"
           ></a>
           <ul
             th:if="${not #lists.isEmpty(menuItem.children)}"
@@ -41,16 +47,17 @@
             x-transition:leave="transition ease-in duration-75"
             x-transition:leave-start="transform opacity-100 scale-100"
             x-transition:leave-end="transform opacity-0 scale-95"
-            class="menu-dropdown absolute left-0 z-10 mt-2 w-40 divide-y divide-gray-50 overflow-hidden rounded bg-white shadow dark:bg-slate-700"
+            class="menu-dropdown absolute left-0 z-10 mt-2 w-40 divide-y divide-gray-50 overflow-hidden rounded bg-white shadow dark:divide-slate-600 dark:bg-slate-700"
           >
             <li
               th:each="childMenuItem : ${menuItem.children}"
               class="flex w-full items-center text-left text-sm hover:bg-gray-50 dark:hover:bg-slate-600"
             >
               <a
-                class="h-full w-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
+                class="size-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
                 th:href="@{${childMenuItem.status.href}}"
                 th:text="${childMenuItem.status.displayName}"
+                th:target="${childMenuItem.spec.target?.value}"
               ></a>
             </li>
           </ul>
@@ -72,15 +79,35 @@
           <div
             class="cursor-pointer text-lg text-gray-600 transition-all hover:text-blue-600 dark:text-slate-100"
             :class="colorScheme.icon"
-            @click="[main.setColorScheme(nextColorScheme.value,true), currentValue = nextColorScheme.value]"
-            :title="`当前主题：${colorScheme.label}，点击切换为：${nextColorScheme.label}`"
           ></div>
+          <ul
+            @mouseenter="open()"
+            @mouseleave="close()"
+            x-show="show"
+            x-transition:enter="transition ease-out duration-100"
+            x-transition:enter-start="transform opacity-0 scale-95"
+            x-transition:enter-end="transform opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-75"
+            x-transition:leave-start="transform opacity-100 scale-100"
+            x-transition:leave-end="transform opacity-0 scale-95"
+            class="absolute right-0 z-10 mt-2 w-40 divide-y divide-gray-50 overflow-hidden rounded bg-white shadow dark:divide-slate-600 dark:bg-slate-700"
+          >
+            <template x-for="colorScheme in colorSchemes">
+              <li
+                class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600 dark:text-slate-50 dark:hover:bg-slate-600 dark:hover:text-gray-300"
+                @click="[main.setColorScheme(colorScheme.value,true),currentValue = colorScheme.value]"
+              >
+                <span :class="colorScheme.icon"></span>
+                <span x-text="colorScheme.label"></span>
+              </li>
+            </template>
+          </ul>
         </li>
         <!-- https://github.com/halo-sigs/plugin-search-widget -->
         <li th:if="${pluginFinder.available('PluginSearchWidget')}">
           <a
             href="javascript:SearchWidget.open()"
-            title="搜索"
+            th:title="#{fragment.header.search}"
             class="text-gray-600 hover:text-blue-600 dark:text-slate-100"
           >
             <div class="i-tabler-search text-lg"></div>
@@ -94,9 +121,9 @@
           @mouseleave="close()"
         >
           <div>
-            <div class="h-5 w-5 text-gray-600 hover:text-blue-600 dark:text-slate-100">
+            <div class="size-5 text-gray-600 hover:text-blue-600 dark:text-slate-100">
               <img
-                class="h-5 w-5 rounded-full"
+                class="size-5 rounded-full"
                 th:src="${currentUser.avatar ?: #theme.assets('/images/default-avatar.svg')}"
                 th:alt="${currentUser.displayName}"
               />
@@ -118,11 +145,11 @@
                 class="flex w-full items-center text-left text-sm hover:bg-gray-50 dark:hover:bg-slate-600"
               >
                 <a
-                  class="h-full w-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
+                  class="size-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
                   href="/console"
                   target="_blank"
+                  th:text="#{fragment.header.console}"
                 >
-                  控制台
                 </a>
               </li>
               <li
@@ -130,10 +157,10 @@
                 class="flex w-full items-center text-left text-sm hover:bg-gray-50 dark:hover:bg-slate-600"
               >
                 <a
-                  class="h-full w-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
+                  class="size-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
                   href="/logout"
+                  th:text="#{fragment.header.logout}"
                 >
-                  退出登录
                 </a>
               </li>
               <li
@@ -141,10 +168,11 @@
                 class="flex w-full items-center text-left text-sm hover:bg-gray-50 dark:hover:bg-slate-600"
               >
                 <a
-                  class="h-full w-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
-                  href="/console"
+                  class="size-full truncate px-4 py-2 text-gray-600 hover:text-blue-600 dark:text-slate-50 dark:hover:text-gray-300"
+                  href="/login"
+                  onclick="this.href = '/login?redirect_uri=' + encodeURIComponent(window.location.href)"
+                  th:text="#{fragment.header.login}"
                 >
-                  登录
                 </a>
               </li>
             </ul>
@@ -184,20 +212,25 @@
           tabindex="0"
           @click="open = false"
         ></button>
-        <h2 class="text-sm font-medium text-gray-600 dark:text-slate-300">菜单</h2>
+        <h2 class="text-sm font-medium text-gray-600 dark:text-slate-300" th:text="#{fragment.header.menu}"></h2>
       </div>
       <nav class="mt-6">
         <ul class="-my-2 divide-y divide-gray-100 text-sm text-gray-800 dark:divide-slate-800 dark:text-slate-100">
           <li th:each="menuItem : ${menu.menuItems}">
-            <a class="flex items-center justify-between gap-1 py-2" th:href="@{${menuItem.status.href}}">
+            <a
+              class="flex items-center justify-between gap-1 py-2"
+              th:href="@{${menuItem.status.href}}"
+              th:target="${menuItem.spec.target?.value}"
+            >
               <span th:text="${menuItem.status.displayName}"></span>
             </a>
             <ul class="divide-y divide-gray-100 dark:divide-slate-800" th:if="${not #lists.isEmpty(menuItem.children)}">
               <li th:each="childMenuItem : ${menuItem.children}" class="flex w-full items-center text-left text-sm">
                 <a
-                  class="h-full w-full truncate px-4 py-2 text-gray-600 dark:text-slate-200"
+                  class="size-full truncate px-4 py-2 text-gray-600 dark:text-slate-200"
                   th:href="@{${childMenuItem.status.href}}"
                   th:text="${childMenuItem.status.displayName}"
+                  th:target="${childMenuItem.spec.target?.value}"
                 ></a>
               </li>
             </ul>

@@ -1,14 +1,23 @@
 import "./styles/tailwind.css";
-import "./styles/main.css";
+import "./styles/main.scss";
 import Alpine from "alpinejs";
 import * as tocbot from "tocbot";
 import dropdown from "./alpine-data/dropdown";
 import colorSchemeSwitcher from "./alpine-data/color-scheme-switcher";
+import upvote from "./alpine-data/upvote";
+import share from "./alpine-data/share";
+import uiPermission from "./alpine-data/ui-permission";
 
 window.Alpine = Alpine;
 
 Alpine.data("dropdown", dropdown);
 Alpine.data("colorSchemeSwitcher", colorSchemeSwitcher);
+// @ts-ignore
+Alpine.data("upvote", upvote);
+// @ts-ignore
+Alpine.data("share", share);
+// @ts-ignore
+Alpine.data("uiPermission", uiPermission);
 
 Alpine.start();
 
@@ -24,6 +33,13 @@ const onScroll = () => {
 window.addEventListener("scroll", onScroll);
 
 export function generateToc() {
+  const content = document.getElementById("content");
+  const titles = content?.querySelectorAll("h1, h2, h3, h4");
+  if (!titles || titles.length === 0) {
+    const tocContainer = document.querySelector(".toc-container");
+    tocContainer?.remove();
+    return;
+  }
   tocbot.init({
     tocSelector: ".toc",
     contentSelector: "#content",
@@ -31,11 +47,10 @@ export function generateToc() {
     extraListClasses: "space-y-1 dark:border-slate-500",
     extraLinkClasses:
       "group flex items-center justify-between rounded py-1 px-1.5 transition-all hover:bg-gray-100 text-sm opacity-80 dark:hover:bg-slate-700 dark:text-slate-50",
-    activeLinkClass: "is-active-link bg-gray-100 dark:bg-slate-600",
     collapseDepth: 6,
     headingsOffset: 100,
-    scrollSmooth: true,
-    scrollSmoothOffset: -100,
+    scrollSmooth: false,
+    tocScrollOffset: 50,
   });
 }
 
@@ -73,5 +88,33 @@ export function setColorScheme(colorScheme: ColorSchemeType, store: boolean) {
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
   if (currentColorScheme === "system") {
     setColorScheme("system", false);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const scrollToTopButton = document.getElementById("btn-scroll-to-top");
+
+  if (!scrollToTopButton) {
+    return;
+  }
+
+  scrollToTopButton.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  window.addEventListener("scroll", _handleScroll);
+
+  function _handleScroll() {
+    if (!scrollToTopButton) {
+      return;
+    }
+
+    const isDown = window.scrollY > 300;
+
+    if (isDown) {
+      scrollToTopButton.style.opacity = "1";
+    } else {
+      scrollToTopButton.style.opacity = "0";
+    }
   }
 });
